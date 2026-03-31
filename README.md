@@ -1,115 +1,149 @@
-# SilvaXNet 🚀 (formerly SilvaNet)
+# MyTorch
 
-Welcome to **SilvaXNet**, the next evolution of **SilvaNet**! Now, with built-in **GPU acceleration via CuPy**, SilvaXNet provides a seamless deep learning experience for both CPU and GPU users. Whether you're an AI enthusiast, researcher, or educator, this library offers a **lightweight, intuitive**, and **educational** deep learning framework that runs efficiently on **both CPU (NumPy) and GPU (CuPy)**.
-
-<p align="center">
-  <img src="silvaxnet.png" alt="Quantization Overview">
-</p>
+A minimal deep learning framework built from scratch, inspired by PyTorch. Supports both CPU (NumPy) and GPU (CuPy) backends through a unified API.
 
 ---
 
-## 🚀 What's New?
+## Features
 
-At this moment, we have **SilvaNet** (CPU version), with the intent to extend to **SilvaXNet** (GPU version).
-
-### ⚡ SilvaNet (CPU version, NumPy-based)
-- Retains **pure NumPy** implementation for maximum portability
-- Ideal for environments **without GPU support**
-
-### 🔥 SilvaXNet (Upcoming GPU-accelerated version with CuPy)
-- Planned **CuPy** integration for GPU acceleration
-- Seamless NumPy ↔ CuPy tensor operations
-- Optimized matrix operations for speedup
-
-### ✅ Unified API for CPU & GPU (Future Feature)
-- Effortless switching between **SilvaNet (NumPy)** and **SilvaXNet (CuPy)**
-- API remains **consistent** for both backends
-
-### 🔬 Planned Improvements for Neural Network Support
-- **Convolutional Layers (CNNs) optimized for GPU**
-- Better **gradient computation with autograd**
-- Enhanced support for **ANNs, RNNs, LSTMs, GRUs, and more!**
+- **Autograd** — automatic differentiation with a dynamic computational graph
+- **CPU / GPU** — seamless switching between NumPy and CuPy backends via `.device`
+- **Neural network layers** — Linear, Conv2d, RNN, GRU, LSTM, MultiHeadAttention, Transformer, Embedding, Dropout, BatchNorm, LayerNorm, and more
+- **Optimizers** — SGD, Adam, AdamW, RMSprop with momentum and weight decay
+- **LR Schedulers** — StepLR, CosineAnnealingLR, OneCycleLR
+- **Data utilities** — Dataset, TensorDataset, DataLoader with shuffle and batching
+- **Training utilities** — gradient clipping, early stopping, checkpointing, metrics
 
 ---
 
-## 🌟 Key Features (Current SilvaNet Version)
-
-- **Autograd Support**: Automatic differentiation for smooth backpropagation.
-- **Deep Learning Layers**:
-  - Fully Connected (Dense) Layers
-  - Recurrent Layers: **RNN, LSTM, GRU**
-  - Convolutional Layers (**Currently CPU-based**)
-- **Loss Functions**: Cross-Entropy, MSE, and more.
-- **Optimized Computation**: NumPy-based operations for efficiency.
-- **Model Management**: Save and load trained models seamlessly.
-
----
-
-## 🚀 Getting Started
-
-Here's a quick example using **SilvaNet** (CPU-only):
-
-```python
-import numpy as np  # For CPU (SilvaNet)
-from nn.Layers import Sequential, Dense
-from nn.losses import CrossEntropyLoss
-from nn.optimizer import SGD
-from Network import NeuralNetwork
-
-# Sample data
-X_train = np.random.rand(100, 10)
-y_train = np.random.randint(0, 2, size=(100, 1))
-
-# Define the neural network
-model = Sequential()
-model.add(Dense(n_inputs=10, n_units=64, activation='relu'))
-model.add(Dense(n_inputs=64, n_units=32, activation='relu'))
-model.add(Dense(n_inputs=32, n_units=2))
-
-# Loss function and optimizer
-loss_fn = CrossEntropyLoss()
-optimizer = SGD(parameters=model.get_parameters(), alpha=0.01)
-
-# Train
-nn = NeuralNetwork(model, loss_fn, optimizer)
-nn.fit(X_train, y_train, epochs=100, batch_size=16)
-```
-
----
-
-## ⚙️ Installation
-
-To install **SilvaNet**, clone the repository:
+## Installation
 
 ```bash
 git clone https://github.com/silvaxxx1/SilvaXNet
 cd SilvaXNet
+uv sync
+uv pip install -e .
 ```
 
-For **SilvaNet (CPU)**:
+Requires Python 3.12+. GPU support requires CUDA 12.x and `cupy-cuda12x`.
+
+---
+
+## Quick Start
+
+```python
+import numpy as np
+import mytorch.functional as F
+from mytorch import nn, optim, data
+from mytorch.tensor import Tensor
+
+# Data
+X = Tensor(np.random.randn(512, 16).astype("float32"))
+y = Tensor(np.random.randint(0, 4, 512))
+loader = data.DataLoader(data.TensorDataset(X, y), batch_size=64, shuffle=True)
+
+# Model
+model = nn.Sequential(
+    nn.Linear(16, 64),
+    nn.ReLU(),
+    nn.Linear(64, 4),
+)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+# Training loop
+for epoch in range(10):
+    for xb, yb in loader:
+        loss = F.cross_entropy(model(xb), yb)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+```
+
+---
+
+## Package Structure
+
+```
+mytorch/
+├── tensor.py        # Tensor class + autograd engine
+├── functional.py    # Stateless activations and loss functions
+├── nn/              # Layer modules
+│   ├── linear.py
+│   ├── conv.py
+│   ├── rnn.py       # RNN, GRU, LSTM (+ cell variants)
+│   ├── attention.py # MultiHeadAttention
+│   ├── transformer.py
+│   ├── normalization.py
+│   ├── embedding.py
+│   └── dropout.py
+├── optim/           # Optimizers + LR schedulers
+├── data/            # Dataset, TensorDataset, DataLoader
+└── utils/           # Checkpointing, metrics, gradient clipping, EarlyStopping
+```
+
+---
+
+## CPU / GPU
+
+```python
+from mytorch.tensor import Tensor
+
+# CPU (default)
+x = Tensor([1.0, 2.0, 3.0], device="cpu")
+
+# GPU (requires CuPy)
+x = Tensor([1.0, 2.0, 3.0], device="gpu")
+
+# Move between devices
+x_gpu = x.to("gpu")
+x_cpu = x_gpu.to("cpu")
+
+# Move a whole model to GPU
+model.to("gpu")
+```
+
+---
+
+## Autograd
+
+```python
+from mytorch.tensor import Tensor
+
+a = Tensor([[1.0, 2.0], [3.0, 4.0]], requires_grad=True)
+b = Tensor([[5.0, 6.0], [7.0, 8.0]], requires_grad=True)
+
+c = (a @ b).sum()
+c.backward()
+
+print(a.grad)  # dc/da
+print(b.grad)  # dc/db
+```
+
+---
+
+## Saving and Loading Checkpoints
+
+```python
+from mytorch import utils
+
+# Save
+utils.save_checkpoint(model, optimizer, epoch=5, filepath="checkpoint.pkl")
+
+# Load
+utils.load_checkpoint("checkpoint.pkl", model=model, optimizer=optimizer)
+```
+
+---
+
+## Running Tests
+
 ```bash
-pip install -r requirements_cpu.txt  # NumPy-based
+uv run pytest tests/ -v
 ```
 
-GPU support (**SilvaXNet**) is currently in development.
-
 ---
 
-## 📚 Documentation
+## License
 
-Check out the **full API reference, guides, and tutorials** here: [Documentation](link-to-documentation)
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the community! If you want to improve **SilvaNet** or help develop **SilvaXNet**, check out our [contributing guidelines](link-to-contributing-guidelines). We’d love to hear your feedback!
-
----
-
-## 📝 License
-
-SilvaNet is licensed under the [MIT License](link-to-license). See the LICENSE file for more details.
-
----
-
+MIT

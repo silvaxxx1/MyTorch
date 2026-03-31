@@ -1,9 +1,18 @@
 [project]
-name = "silvaxnet"
+name = "mytorch"
 version = "0.1.0"
-description = "Add your description here"
+description = "A minimal deep learning framework built from scratch with NumPy/CuPy backends"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.3.4",
+    "cupy-cuda12x>=13.6.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["mytorch*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
 ]

@@ -1,1 +1,0 @@
-# the full difination of the conv block (conv layer , maxpool , avg pool , stride ...)
