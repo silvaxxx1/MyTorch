@@ -136,7 +136,18 @@ def mae_loss(pred, target):
     """Mean Absolute Error"""
     xp = pred.xp
     diff = pred.data - target.data
-    out = Tensor(xp.abs(diff).mean(), requires_grad=pred.requires_grad, device=pred.device)
+    abs_diff = xp.abs(diff)
+    out = Tensor(abs_diff.mean(), requires_grad=pred.requires_grad or target.requires_grad, device=pred.device)
+    if out.requires_grad:
+        out._prev = {pred, target}
+        n = diff.size
+        def _backward():
+            grad = out.grad * xp.sign(diff) / n
+            if pred.requires_grad:
+                pred.grad = grad if pred.grad is None else pred.grad + grad
+            if target.requires_grad:
+                target.grad = -grad if target.grad is None else target.grad - grad
+        out._grad_fn = _backward
     return out
 
 def cross_entropy(pred, target):
@@ -145,19 +156,38 @@ def cross_entropy(pred, target):
     xp = pred.xp
     batch_size = pred.shape[0]
     target_data = target.data if isinstance(target, Tensor) else target
-    loss = -log_probs.data[xp.arange(batch_size), target_data.astype(int)].mean()
-    return Tensor(loss, requires_grad=pred.requires_grad, device=pred.device)
+    indices = target_data.astype(int)
+    selected = log_probs[xp.arange(batch_size), indices]
+    return -selected.mean()
 
 def binary_cross_entropy(pred, target):
     """Binary Cross Entropy"""
     xp = pred.xp
-    eps = 1e-10
-    loss = -(target.data * xp.log(pred.data + eps) + (1 - target.data) * xp.log(1 - pred.data + eps))
-    return Tensor(loss.mean(), requires_grad=pred.requires_grad, device=pred.device)
+    eps = 1e-7
+    pred_data = xp.clip(pred.data, eps, 1 - eps)
+    loss_data = -(target.data * xp.log(pred_data) + (1 - target.data) * xp.log(1 - pred_data))
+    out = Tensor(loss_data.mean(), requires_grad=pred.requires_grad, device=pred.device)
+    if out.requires_grad:
+        out._prev = {pred}
+        n = pred.data.size
+        def _backward():
+            grad = out.grad * (-target.data / pred_data + (1 - target.data) / (1 - pred_data)) / n
+            pred.grad = grad if pred.grad is None else pred.grad + grad
+        out._grad_fn = _backward
+    return out
 
 def huber_loss(pred, target, delta=1.0):
     """Huber Loss (smooth L1)"""
     xp = pred.xp
-    diff = xp.abs(pred.data - target.data)
-    loss = xp.where(diff < delta, 0.5 * diff ** 2, delta * (diff - 0.5 * delta))
-    return Tensor(loss.mean(), requires_grad=pred.requires_grad, device=pred.device)
+    diff = pred.data - target.data
+    abs_diff = xp.abs(diff)
+    loss_data = xp.where(abs_diff < delta, 0.5 * diff ** 2, delta * (abs_diff - 0.5 * delta))
+    out = Tensor(loss_data.mean(), requires_grad=pred.requires_grad, device=pred.device)
+    if out.requires_grad:
+        out._prev = {pred}
+        n = pred.data.size
+        def _backward():
+            grad = out.grad * xp.where(abs_diff < delta, diff, delta * xp.sign(diff)) / n
+            pred.grad = grad if pred.grad is None else pred.grad + grad
+        out._grad_fn = _backward
+    return out

@@ -19,8 +19,8 @@ A minimal deep learning framework built from scratch, inspired by PyTorch. Suppo
 ## Installation
 
 ```bash
-git clone https://github.com/silvaxxx1/SilvaXNet
-cd SilvaXNet
+git clone https://github.com/silvaxxx1/MyTorch.git
+cd MyTorch
 uv sync
 uv pip install -e .
 ```

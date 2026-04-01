@@ -6,7 +6,7 @@
 # ============================================================================
 """RNN layers"""
 
-from ..tensor import Tensor
+from ..tensor import Tensor, stack as tensor_stack
 from .. import functional as F
 from .modules import Module
 import numpy as np
@@ -50,21 +50,20 @@ class RNN(Module):
     def __call__(self, x, h=None):
         xp = cp if self.device == 'gpu' and cp is not None else np
         seq_len, batch, _ = x.shape
-        
+
         if h is None:
-            h = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device) 
+            h = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device)
                  for _ in range(self.num_layers)]
-        
+
         outputs = []
         for t in range(seq_len):
-            x_t = Tensor(x.data[t], requires_grad=x.requires_grad, device=self.device)
+            x_t = x[t]  # keeps grad connection via __getitem__
             for i, cell in enumerate(self.cells):
                 h[i] = cell(x_t, h[i])
                 x_t = h[i]
-            outputs.append(x_t.data)
-        
-        outputs = xp.stack(outputs)
-        return Tensor(outputs, requires_grad=x.requires_grad, device=self.device), h
+            outputs.append(x_t)
+
+        return tensor_stack(outputs, axis=0), h
 
 class GRUCell(Module):
     """Single GRU cell"""
@@ -118,21 +117,20 @@ class GRU(Module):
     def __call__(self, x, h=None):
         xp = cp if self.device == 'gpu' and cp is not None else np
         seq_len, batch, _ = x.shape
-        
+
         if h is None:
-            h = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device) 
+            h = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device)
                  for _ in range(self.num_layers)]
-        
+
         outputs = []
         for t in range(seq_len):
-            x_t = Tensor(x.data[t], requires_grad=x.requires_grad, device=self.device)
+            x_t = x[t]
             for i, cell in enumerate(self.cells):
                 h[i] = cell(x_t, h[i])
                 x_t = h[i]
-            outputs.append(x_t.data)
-        
-        outputs = xp.stack(outputs)
-        return Tensor(outputs, requires_grad=x.requires_grad, device=self.device), h
+            outputs.append(x_t)
+
+        return tensor_stack(outputs, axis=0), h
 
 class LSTMCell(Module):
     """Single LSTM cell"""
@@ -196,21 +194,20 @@ class LSTM(Module):
     def __call__(self, x, h=None, c=None):
         xp = cp if self.device == 'gpu' and cp is not None else np
         seq_len, batch, _ = x.shape
-        
+
         if h is None:
             h = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device)
                  for _ in range(self.num_layers)]
         if c is None:
             c = [Tensor(xp.zeros((batch, self.hidden_size)), device=self.device)
                  for _ in range(self.num_layers)]
-        
+
         outputs = []
         for t in range(seq_len):
-            x_t = Tensor(x.data[t], requires_grad=x.requires_grad, device=self.device)
+            x_t = x[t]
             for i, cell in enumerate(self.cells):
                 h[i], c[i] = cell(x_t, h[i], c[i])
                 x_t = h[i]
-            outputs.append(x_t.data)
-        
-        outputs = xp.stack(outputs)
-        return Tensor(outputs, requires_grad=x.requires_grad, device=self.device), h, c
+            outputs.append(x_t)
+
+        return tensor_stack(outputs, axis=0), h, c

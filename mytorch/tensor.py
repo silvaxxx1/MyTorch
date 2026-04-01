@@ -266,7 +266,8 @@ def cat(tensors, axis=0):
     if out.requires_grad:
         out._prev = set(tensors)
         def _backward():
-            splits = xp.split(out.grad, len(tensors), axis=axis)
+            indices = xp.cumsum(xp.array([t.shape[axis] for t in tensors[:-1]]))
+            splits = xp.split(out.grad, indices, axis=axis)
             for t, grad in zip(tensors, splits):
                 if t.requires_grad:
                     t.grad = grad if t.grad is None else t.grad + grad

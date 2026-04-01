@@ -1,7 +1,7 @@
 [project]
 name = "mytorch"
 version = "0.1.0"
-description = "A minimal deep learning framework built from scratch with NumPy/CuPy backends"
+description = "MyTorch v1 — minimal DNN/CNN/RNN framework with autograd, NumPy/CuPy backends"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,3 +16,6 @@ include = ["mytorch*"]
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
