@@ -142,7 +142,11 @@ print(b.grad)  # dc/db
 ## Running Tests
 
 ```bash
-.venv/bin/python -m pytest tests/ -v
+# With venv activated
+python -m pytest tests/ -v
+
+# Without activating
+uv run pytest tests/ -v
 ```
 
 ---
