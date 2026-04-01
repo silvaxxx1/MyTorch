@@ -79,6 +79,24 @@ for epoch in range(10):
 
 ---
 
+## Examples
+
+End-to-end runnable examples covering all three supported architectures:
+
+| File | Architecture | What it covers |
+|------|-------------|----------------|
+| [`examples/dnn.py`](examples/dnn.py) | DNN | Multi-class classification — BatchNorm, Dropout, Adam + StepLR, early stopping, checkpointing |
+| [`examples/cnn.py`](examples/cnn.py) | CNN | Image classification — Conv2d → BatchNorm2d → MaxPool2d → FC head |
+| [`examples/rnn.py`](examples/rnn.py) | RNN / GRU / LSTM | Sequence classification — all three recurrent architectures compared side-by-side |
+
+```bash
+PYTHONPATH=. python examples/dnn.py
+PYTHONPATH=. python examples/cnn.py
+PYTHONPATH=. python examples/rnn.py
+```
+
+---
+
 ## Package Structure (v1)
 
 ```
@@ -89,6 +107,10 @@ mytorch/
 ├── optim/           # SGD, Adam, AdamW, RMSprop + LR schedulers
 ├── data/            # Dataset, TensorDataset, DataLoader
 └── utils/           # Checkpointing, metrics, gradient clipping, EarlyStopping
+examples/
+├── dnn.py
+├── cnn.py
+└── rnn.py
 ```
 
 ---
