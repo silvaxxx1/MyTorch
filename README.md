@@ -1,18 +1,39 @@
-# MyTorch
+<p align="center">
+  <img src="MyTorch.png" alt="MyTorch Logo" width="200"/>
+</p>
 
-A minimal deep learning framework built from scratch, inspired by PyTorch. Supports both CPU (NumPy) and GPU (CuPy) backends through a unified API.
+<h1 align="center">MyTorch</h1>
+
+<p align="center">
+  A deep learning framework built from scratch — autograd, CNN, RNN, and Triton-fused kernels coming next.
+</p>
 
 ---
 
-## Features
+## Overview
 
-- **Autograd** — automatic differentiation with a dynamic computational graph
-- **CPU / GPU** — seamless switching between NumPy and CuPy backends via `.device`
-- **Neural network layers** — Linear, Conv2d, RNN, GRU, LSTM, MultiHeadAttention, Transformer, Embedding, Dropout, BatchNorm, LayerNorm, and more
-- **Optimizers** — SGD, Adam, AdamW, RMSprop with momentum and weight decay
-- **LR Schedulers** — StepLR, CosineAnnealingLR, OneCycleLR
-- **Data utilities** — Dataset, TensorDataset, DataLoader with shuffle and batching
-- **Training utilities** — gradient clipping, early stopping, checkpointing, metrics
+MyTorch is a PyTorch-inspired deep learning framework written from scratch. **v1** is a stable, fully functional core for DNN, CNN, and RNN projects with complete forward and backward passes. **v2** is actively being developed with a new architecture aimed at production-quality training speed.
+
+---
+
+## Roadmap
+
+### v1 — Stable (current)
+- Full autograd engine with dynamic computational graph
+- DNN, CNN, RNN/GRU/LSTM — all with correct backward passes
+- Optimizers: SGD, Adam, AdamW, RMSprop + LR schedulers
+- Data utilities: Dataset, TensorDataset, DataLoader
+- Training utilities: gradient clipping, early stopping, checkpointing, metrics
+- CPU (NumPy) and GPU (CuPy) backends
+
+### v2 — In Development
+
+| Pillar | Description |
+|--------|-------------|
+| **1 — Array Backend** | Unified `Array` module replacing the scattered `xp` pattern. Single device-agnostic API over NumPy and CuPy. Foundation for everything below. |
+| **2 — GPT-2 (manual)** | GPT-2 implemented from scratch with fully manual forward and backward passes — no autograd. Serves as a reference to understand exactly what the engine needs to handle. |
+| **3 — Robust Autograd** | Redesigned autograd using a `Function` class pattern (static `forward`/`backward`). More composable, easier to extend, and built on the new Array backend. |
+| **4 — Triton Kernels** | Custom CUDA kernels via [Triton](https://github.com/openai/triton) for fused ops: flash attention, fused LayerNorm, fused GELU/matmul, fused cross-entropy, fused optimizer steps. |
 
 ---
 
@@ -22,7 +43,6 @@ A minimal deep learning framework built from scratch, inspired by PyTorch. Suppo
 git clone https://github.com/silvaxxx1/MyTorch.git
 cd MyTorch
 uv sync
-uv pip install -e .
 ```
 
 Requires Python 3.12+. GPU support requires CUDA 12.x and `cupy-cuda12x`.
@@ -37,12 +57,10 @@ import mytorch.functional as F
 from mytorch import nn, optim, data
 from mytorch.tensor import Tensor
 
-# Data
 X = Tensor(np.random.randn(512, 16).astype("float32"))
 y = Tensor(np.random.randint(0, 4, 512))
 loader = data.DataLoader(data.TensorDataset(X, y), batch_size=64, shuffle=True)
 
-# Model
 model = nn.Sequential(
     nn.Linear(16, 64),
     nn.ReLU(),
@@ -51,7 +69,6 @@ model = nn.Sequential(
 
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-# Training loop
 for epoch in range(10):
     for xb, yb in loader:
         loss = F.cross_entropy(model(xb), yb)
@@ -62,45 +79,16 @@ for epoch in range(10):
 
 ---
 
-## Package Structure
+## Package Structure (v1)
 
 ```
 mytorch/
 ├── tensor.py        # Tensor class + autograd engine
-├── functional.py    # Stateless activations and loss functions
-├── nn/              # Layer modules
-│   ├── linear.py
-│   ├── conv.py
-│   ├── rnn.py       # RNN, GRU, LSTM (+ cell variants)
-│   ├── attention.py # MultiHeadAttention
-│   ├── transformer.py
-│   ├── normalization.py
-│   ├── embedding.py
-│   └── dropout.py
-├── optim/           # Optimizers + LR schedulers
+├── functional.py    # Activations and loss functions
+├── nn/              # Linear, Conv2d, RNN, GRU, LSTM, BatchNorm, Dropout, Embedding...
+├── optim/           # SGD, Adam, AdamW, RMSprop + LR schedulers
 ├── data/            # Dataset, TensorDataset, DataLoader
 └── utils/           # Checkpointing, metrics, gradient clipping, EarlyStopping
-```
-
----
-
-## CPU / GPU
-
-```python
-from mytorch.tensor import Tensor
-
-# CPU (default)
-x = Tensor([1.0, 2.0, 3.0], device="cpu")
-
-# GPU (requires CuPy)
-x = Tensor([1.0, 2.0, 3.0], device="gpu")
-
-# Move between devices
-x_gpu = x.to("gpu")
-x_cpu = x_gpu.to("cpu")
-
-# Move a whole model to GPU
-model.to("gpu")
 ```
 
 ---
@@ -122,24 +110,10 @@ print(b.grad)  # dc/db
 
 ---
 
-## Saving and Loading Checkpoints
-
-```python
-from mytorch import utils
-
-# Save
-utils.save_checkpoint(model, optimizer, epoch=5, filepath="checkpoint.pkl")
-
-# Load
-utils.load_checkpoint("checkpoint.pkl", model=model, optimizer=optimizer)
-```
-
----
-
 ## Running Tests
 
 ```bash
-uv run pytest tests/ -v
+.venv/bin/python -m pytest tests/ -v
 ```
 
 ---

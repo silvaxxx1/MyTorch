@@ -4,7 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MyTorch** is a minimal deep learning framework built from scratch with a PyTorch-inspired API. It supports both CPU (NumPy) and GPU (CuPy) backends via a unified `xp` abstraction.
+**MyTorch** is a deep learning framework built from scratch with a PyTorch-inspired API.
+
+- **v1 (stable, tagged `v1.0.0`)** — DNN, CNN, RNN core with full autograd. CPU (NumPy) and GPU (CuPy) backends via a `tensor.xp` abstraction.
+- **v2 (in development)** — New architecture built around 4 pillars (see below).
+
+## v2 Development Direction
+
+### Pillar 1 — Unified Array Backend
+Replace the scattered `xp = np/cp` pattern with a proper `backend/` module containing an `Array` class that unifies NumPy and CuPy under one device-agnostic API. All of v2 is built on this.
+
+### Pillar 2 — GPT-2 (manual backward, no autograd)
+Standalone `gpt2/` directory. GPT-2 architecture implemented with fully manual forward and backward passes. Purpose: understand which ops need fusing before the autograd engine handles them automatically.
+
+### Pillar 3 — Robust Autograd Engine
+Redesign autograd using a `Function` class pattern with static `forward(ctx, ...)` and `backward(ctx, grad)` methods. Built on the Array backend. Replaces v1's closure-per-op approach.
+
+### Pillar 4 — Triton Kernel Fusion
+Custom CUDA kernels via Triton for fused ops: flash attention, fused LayerNorm, fused GELU/matmul, fused cross-entropy, fused Adam. Each kernel is a `Function` subclass so it integrates naturally with the autograd engine.
+
+**Build order:** Pillar 1 → (Pillar 2 in parallel with Pillar 3) → Pillar 4.
+
+---
 
 ## Commands
 
@@ -13,24 +34,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 uv sync
 
 # Run all tests
-uv run pytest
+.venv/bin/python -m pytest tests/ -v
 
 # Run a specific test file
-uv run pytest tests/test_tensor.py
-uv run pytest tests/test_nn.py -v
-
-# Run a single test
-uv run pytest tests/test_tensor.py::test_add_forward
+.venv/bin/python -m pytest tests/test_tensor.py
+.venv/bin/python -m pytest tests/test_nn.py -v
 ```
 
-## Architecture
+## v1 Architecture
 
 ```
 mytorch/
 ├── tensor.py        # Tensor class + autograd engine
 ├── functional.py    # Stateless activations and loss functions
-├── nn/              # Layer modules (Linear, Conv2d, RNN, LSTM, attention, etc.)
-├── optim/           # Optimizers (SGD, Adam, AdamW, RMSprop) + LR schedulers
+├── nn/              # Linear, Conv2d, RNN, GRU, LSTM, BatchNorm, Dropout, Embedding
+├── optim/           # SGD, Adam, AdamW, RMSprop + LR schedulers
 ├── data/            # Dataset, TensorDataset, DataLoader
 └── utils/           # Checkpointing, metrics, gradient clipping, EarlyStopping
 tests/               # All tests live here
@@ -47,7 +65,7 @@ tests/               # All tests live here
 
 `backward()` builds a topological ordering of `_prev` nodes and calls each `_grad_fn` in reverse. Gradients accumulate in `.grad` with `+=`.
 
-### CPU/GPU Pattern
+### CPU/GPU Pattern (v1)
 
 Use `tensor.xp` instead of `np` to write device-agnostic ops:
 ```python
