@@ -30,15 +30,24 @@ Custom CUDA kernels via Triton for fused ops: flash attention, fused LayerNorm, 
 ## Commands
 
 ```bash
-# Install dependencies (uses uv)
+# Install dependencies and create .venv (uses uv)
 uv sync
 
+# Activate the environment
+source .venv/bin/activate          # Linux / macOS
+.venv\Scripts\activate             # Windows
+
 # Run all tests
-.venv/bin/python -m pytest tests/ -v
+python -m pytest tests/ -v
 
 # Run a specific test file
-.venv/bin/python -m pytest tests/test_tensor.py
-.venv/bin/python -m pytest tests/test_nn.py -v
+python -m pytest tests/test_tensor.py
+python -m pytest tests/test_nn.py -v
+
+# Run examples
+PYTHONPATH=. python examples/dnn.py
+PYTHONPATH=. python examples/cnn.py
+PYTHONPATH=. python examples/rnn.py
 ```
 
 ## v1 Architecture

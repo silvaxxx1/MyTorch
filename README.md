@@ -45,6 +45,13 @@ cd MyTorch
 uv sync
 ```
 
+Activate the environment:
+
+```bash
+source .venv/bin/activate    # Linux / macOS
+.venv\Scripts\activate       # Windows
+```
+
 Requires Python 3.12+. GPU support requires CUDA 12.x and `cupy-cuda12x`.
 
 ---
