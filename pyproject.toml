@@ -9,6 +9,10 @@ dependencies = [
     "cupy-cuda12x>=13.6.0",
 ]
 
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools.packages.find]
 include = ["mytorch*"]
 
