@@ -23,8 +23,6 @@ class Embedding(Module):
         self._params = [self.weight]
     
     def __call__(self, x):
-        # x: indices of shape (batch, seq_len)
-        xp = self.weight.xp
-        indices = x.data if isinstance(x, Tensor) else x
-        embeddings = self.weight.data[indices.astype(int)]
-        return Tensor(embeddings, requires_grad=True, device=self.weight.device)
+        # x: indices of shape (batch, seq_len) — route through __getitem__ for backward
+        indices = x.data.astype(int) if isinstance(x, Tensor) else np.array(x, dtype=int)
+        return self.weight[indices]
